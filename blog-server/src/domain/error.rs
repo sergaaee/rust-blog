@@ -48,10 +48,13 @@ impl ResponseError for DomainError {
             DomainError::PostNotFound(resource) | DomainError::UserNotFound(resource) => {
                 Some(json!({ "resource": resource }))
             }
+            DomainError::Forbidden => {
+                Some(json!({ "message:": "you do not have permission to delete this post"}))
+            }
             _ => None,
         };
         let body = ErrorBody {
-            error: &message,
+            error: message.as_str(),
             details,
         };
         HttpResponse::build(self.status_code()).json(body)
