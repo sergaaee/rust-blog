@@ -4,8 +4,6 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-[build-dependencies]
-tonic-build = "0.12"
 actix-web = "4"
 actix-cors = "0.6"
 actix-service = "2"
@@ -27,3 +25,5 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "chron
 uuid = { version = "1", features = ["v4", "serde"] }
 anyhow = "1"
 futures-util = "0.3"
+[build-dependencies]
+tonic-build = "0.12"
