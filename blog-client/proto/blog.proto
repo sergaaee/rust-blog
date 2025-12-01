@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package blog;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service BlogService {
+    rpc Register (RegisterRequest) returns (AuthResponse);
+    rpc Login (LoginRequest) returns (AuthResponse);
+    rpc RefreshToken (RefreshTokenRequest) returns (AuthResponse);
+
+    rpc CreatePost (CreatePostRequest) returns (Post);
+    rpc GetPost (GetPostRequest) returns (Post);
+    rpc ListPosts (ListPostsRequest) returns (ListPostsResponse);
+    rpc UpdatePost (UpdatePostRequest) returns (Post);
+    rpc DeletePost (DeletePostRequest) returns (google.protobuf.Empty);
+}
+
+message AuthResponse {
+    string access_token = 1;    // JWT
+    string refresh_token = 2;
+    int64 expires_in = 3;       // sec
+    string token_type = 4;      // "Bearer"
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message RegisterRequest {
+    string login = 1;   // unique
+    string email = 2;   // unique
+    string password = 3; // at least 8 chars
+}
+
+message LoginRequest {
+    string password = 2;
+
+    // Optional logging via login or email
+    oneof identifier {
+        string login = 1;
+        string email = 3;
+    }
+}
+
+message User {
+    string user_id = 1; // UUID
+    string login = 2;
+    google.protobuf.Timestamp created_at = 3;   // Registration date
+}
+
+message Post {
+    string post_id = 1;  // UUID string
+    string author_id = 2;  // user_id
+    string title = 3;
+    string content = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreatePostRequest {
+    string title = 1;
+    string content = 2;
+}
+
+message GetPostRequest {
+    string post_id = 1;
+}
+
+message ListPostsRequest {
+    // Pagination
+    int32 page_size = 1;
+    string page_token = 2;
+
+    // Filters (optional)
+    google.protobuf.StringValue author_id = 3;  // user's or others' posts
+}
+
+message ListPostsResponse {
+    repeated Post posts = 1;
+    string next_page_token = 2;
+}
+
+message UpdatePostRequest {
+    string post_id = 1;
+    google.protobuf.StringValue title = 2;  // wrappers чтобы можно было не менять поле
+    google.protobuf.StringValue content = 3;
+}
+
+message DeletePostRequest {
+    string post_id = 1;
+}

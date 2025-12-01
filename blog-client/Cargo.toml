@@ -1,0 +1,8 @@
+[package]
+name = "blog-client"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+[build-dependencies]
+tonic-build = "0.12"
