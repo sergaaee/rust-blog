@@ -9,7 +9,6 @@ import "google/protobuf/wrappers.proto";
 service BlogService {
     rpc Register (RegisterRequest) returns (AuthResponse);
     rpc Login (LoginRequest) returns (AuthResponse);
-    rpc RefreshToken (RefreshTokenRequest) returns (AuthResponse);
 
     rpc CreatePost (CreatePostRequest) returns (Post);
     rpc GetPost (GetPostRequest) returns (Post);
@@ -20,13 +19,8 @@ service BlogService {
 
 message AuthResponse {
     string access_token = 1;    // JWT
-    string refresh_token = 2;
-    int64 expires_in = 3;       // sec
-    string token_type = 4;      // "Bearer"
-}
-
-message RefreshTokenRequest {
-    string refresh_token = 1;
+    int64 expires_in = 2;       // sec
+    string token_type = 3;      // "Bearer"
 }
 
 message RegisterRequest {

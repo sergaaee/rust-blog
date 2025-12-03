@@ -19,6 +19,11 @@ pub trait PostRepository: Send + Sync {
         update: UpdatePostRequest,
     ) -> Result<Option<Post>, DomainError>;
     async fn delete_post(&self, id: Uuid, author_id: Uuid) -> Result<(), DomainError>;
+    async fn get_posts(
+        &self,
+        limit: Option<usize>,
+        offset: Option<usize>,
+    ) -> Result<Vec<Post>, DomainError>;
 }
 
 #[derive(Clone)]
@@ -84,7 +89,7 @@ impl PostRepository for PostgresPostRepository {
         let post = sqlx::query_as::<_, Post>(
             r#"
             UPDATE posts
-            SET 
+            SET
                 title = COALESCE($1, title),
                 content = COALESCE($2, content),
                 updated_at = $3
@@ -137,5 +142,31 @@ impl PostRepository for PostgresPostRepository {
 
         info!(post_id = %id, "post deleted");
         Ok(())
+    }
+
+    async fn get_posts(
+        &self,
+        limit: Option<usize>,
+        offset: Option<usize>,
+    ) -> Result<Vec<Post>, DomainError> {
+        let limit = limit.unwrap_or(10).min(100) as i64;
+        let offset = offset.unwrap_or(0) as i64;
+
+        sqlx::query_as::<_, Post>(
+            r#"
+        SELECT id, author_id, title, content, created_at, updated_at
+        FROM posts
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
+        "#,
+        )
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&self.pool) // ← fetch_all, not fetch_optional!
+        .await
+        .map_err(|e| {
+            error!("db error while fetching posts: {}", e);
+            DomainError::Internal(e.to_string())
+        })
     }
 }

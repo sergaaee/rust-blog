@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct RegisterRequest {
-    pub login: String,
+    pub username: String,
     pub email: String,
     pub password: String,
 }
@@ -12,32 +12,15 @@ pub struct RegisterRequest {
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
     pub password: String,
-    #[serde(default)]
-    pub email: Option<String>,
-    #[serde(default)]
-    pub login: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct RefreshTokenRequest {
-    pub refresh_token: String,
+    pub email: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct AuthResponse {
     pub access_token: String,
-    pub refresh_token: String,
-    pub access_expires_in: i64,
+    pub expires_in: i64,
     #[serde(rename = "token_type")]
     pub token_type: String, // "Bearer"
-}
-
-#[derive(Debug, Serialize)]
-pub struct AccessTokenResponse {
-    pub access_token: String,
-    pub access_expires_in: i64,
-    #[serde(rename = "token_type")]
-    pub token_type: String,
 }
 
 // ======================= POSTS =======================
