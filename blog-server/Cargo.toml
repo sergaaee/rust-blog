@@ -25,5 +25,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "chron
 uuid = { version = "1", features = ["v4", "serde"] }
 anyhow = "1"
 futures-util = "0.3"
+tonic = { version = "0.14" }
+prost = "0.14"
+tonic-prost = "0.14"
+prost-types = {version = "0.14", features = ["std", "chrono"]}
+
 [build-dependencies]
-tonic-build = "0.12"
+tonic-prost-build = "0.14"

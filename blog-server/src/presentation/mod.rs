@@ -1,4 +1,5 @@
 pub mod dto;
+pub mod grpc_service;
 pub mod handlers;
-pub mod utils;
 pub mod middleware;
+pub mod utils;

@@ -1,7 +1,7 @@
 use crate::domain::error::DomainError;
 use crate::domain::user::User;
 use async_trait::async_trait;
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -45,7 +45,7 @@ impl UserRepository for PostgresUserRepository {
                 .map(|c| c.contains("users_email"))
                 == Some(true)
             {
-                DomainError::Validation("email already registered".to_string())
+                DomainError::UserAlreadyExists("email already registered".to_string())
             } else {
                 DomainError::Internal(format!("database error: {}", e))
             }

@@ -3,9 +3,7 @@ use crate::data::user_repository::PostgresUserRepository;
 use crate::domain::error::DomainError;
 use crate::presentation::dto::{AuthResponse, LoginRequest, RegisterRequest};
 use actix_web::{HttpResponse, Responder, Scope, post, web};
-use chrono::Utc;
 use tracing::info;
-use uuid::Uuid;
 
 pub fn scope() -> Scope {
     web::scope("")
@@ -43,7 +41,7 @@ async fn login(
 ) -> Result<impl Responder, DomainError> {
     let expires_in = 3600; // 1 час
     let jwt = service
-        .login(&payload.email.as_str(), &payload.password)
+        .login(payload.email.as_str(), &payload.password)
         .await?;
     info!(email = %payload.email, "user logged in");
     Ok(HttpResponse::Ok().json(AuthResponse {

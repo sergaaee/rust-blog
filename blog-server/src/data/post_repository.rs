@@ -1,10 +1,9 @@
 use crate::domain::error::DomainError;
 use crate::domain::post::Post;
-use crate::domain::user::User;
 use crate::presentation::dto::UpdatePostRequest;
 use async_trait::async_trait;
 use chrono::Utc;
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -47,7 +46,7 @@ impl PostRepository for PostgresPostRepository {
             VALUES (gen_random_uuid(), $1, $2, $3, $4, $4)
             "#,
         )
-        .bind(&post.author_id)
+        .bind(post.author_id)
         .bind(&post.title)
         .bind(&post.content)
         .bind(now)

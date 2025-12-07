@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use crate::data::post_repository::PostRepository;
 use crate::domain::{error::DomainError, post::Post};
-use crate::infrastructure::security::JwtKeys;
 use crate::presentation::dto::UpdatePostRequest;
 use tracing::instrument;
 use uuid::Uuid;
@@ -23,9 +22,8 @@ where
     pub async fn get_post(&self, id: Uuid) -> Result<Post, DomainError> {
         self.repo
             .find_by_id(id)
-            .await
-            .map_err(DomainError::from)?
-            .ok_or_else(|| DomainError::PostNotFound(id))
+            .await?
+            .ok_or(DomainError::PostNotFound(id))
     }
 
     pub async fn get_posts(
@@ -33,12 +31,7 @@ where
         limit: Option<usize>,
         offset: Option<usize>,
     ) -> Result<Vec<Post>, DomainError> {
-        let posts = self
-            .repo
-            .get_posts(limit, offset)
-            .await
-            .map_err(DomainError::from)?;
-
+        let posts = self.repo.get_posts(limit, offset).await?;
         Ok(posts)
     }
 
@@ -50,7 +43,7 @@ where
         content: String,
     ) -> Result<Post, DomainError> {
         let post = Post::new(author_id, title, content);
-        self.repo.create(post).await.map_err(DomainError::from)
+        self.repo.create(post).await
     }
 
     #[instrument(skip(self))]
@@ -63,7 +56,7 @@ where
         match self.repo.update_post(author_id, post_id, update).await {
             Ok(Some(post)) => Ok(post),
             Ok(None) => Err(DomainError::PostNotFound(post_id)),
-            Err(e) => Err(DomainError::from(e)),
+            Err(e) => Err(e),
         }
     }
 

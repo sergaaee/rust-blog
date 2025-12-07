@@ -4,5 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+prost = "0.14"
+tonic = "0.14"
+tonic-prost = "0.14"
+prost-types = {version = "0.14", features = ["chrono"]}
 [build-dependencies]
-tonic-build = "0.12"
+tonic-prost-build = "0.14"

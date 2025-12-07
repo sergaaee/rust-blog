@@ -24,24 +24,19 @@ message AuthResponse {
 }
 
 message RegisterRequest {
-    string login = 1;   // unique
+    string username = 1;   // unique
     string email = 2;   // unique
     string password = 3; // at least 8 chars
 }
 
 message LoginRequest {
+    string username = 1;
     string password = 2;
-
-    // Optional logging via login or email
-    oneof identifier {
-        string login = 1;
-        string email = 3;
-    }
 }
 
 message User {
     string user_id = 1; // UUID
-    string login = 2;
+    string username = 2;
     google.protobuf.Timestamp created_at = 3;   // Registration date
 }
 
@@ -65,8 +60,8 @@ message GetPostRequest {
 
 message ListPostsRequest {
     // Pagination
-    int32 page_size = 1;
-    string page_token = 2;
+    int32 limit = 1;
+    int32 offset = 2;
 
     // Filters (optional)
     google.protobuf.StringValue author_id = 3;  // user's or others' posts
@@ -74,7 +69,7 @@ message ListPostsRequest {
 
 message ListPostsResponse {
     repeated Post posts = 1;
-    string next_page_token = 2;
+    int32 total_count = 2;
 }
 
 message UpdatePostRequest {

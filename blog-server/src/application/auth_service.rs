@@ -27,17 +27,21 @@ where
     pub async fn get_user(&self, id: uuid::Uuid) -> Result<User, DomainError> {
         self.repo
             .find_by_id(id)
-            .await
-            .map_err(DomainError::from)?
-            .ok_or_else(|| DomainError::UserNotFound(id))
+            .await?
+            .ok_or(DomainError::UserNotFound(id))
     }
 
     #[instrument(skip(self))]
-    pub async fn register(&self, username: String, email: String, password: String) -> Result<User, DomainError> {
+    pub async fn register(
+        &self,
+        username: String,
+        email: String,
+        password: String,
+    ) -> Result<User, DomainError> {
         let hash =
             hash_password(&password).map_err(|err| DomainError::Internal(err.to_string()))?;
         let user = User::new(username, email.to_lowercase(), hash);
-        self.repo.create(user).await.map_err(DomainError::from)
+        self.repo.create(user).await
     }
 
     #[instrument(skip(self))]
@@ -45,9 +49,8 @@ where
         let user = self
             .repo
             .find_by_email(&email.to_lowercase())
-            .await
-            .map_err(DomainError::from)?
-            .ok_or_else(|| DomainError::Unauthorized)?;
+            .await?
+            .ok_or(DomainError::Unauthorized)?;
 
         let valid = verify_password(password, &user.password_hash)
             .map_err(|_| DomainError::Unauthorized)?;

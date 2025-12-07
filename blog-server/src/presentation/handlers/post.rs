@@ -1,12 +1,9 @@
 use crate::application::post_service::PostService;
 use crate::data::post_repository::PostgresPostRepository;
 use crate::domain::error::DomainError;
-use crate::domain::post::Post;
 use crate::presentation::dto::{CreatePostRequest, UpdatePostRequest};
 use crate::presentation::utils::{AuthenticatedUser, ensure_owner};
-use actix_web::cookie::time::macros::offset;
-use actix_web::web::post;
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, Scope, delete, get, post, put, web};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse, delete, get, post, put, web};
 use serde_json::json;
 use tracing::info;
 use uuid::Uuid;
@@ -21,7 +18,6 @@ async fn create_post(
     let post = post
         .create_post(user.id, payload.title.clone(), payload.content.clone())
         .await?;
-    let response = Post::from(post);
 
     info!(
         request_id = %request_id(&req),
@@ -29,7 +25,7 @@ async fn create_post(
         "post created"
     );
 
-    Ok(HttpResponse::Created().json(response))
+    Ok(HttpResponse::Created().json(post))
 }
 
 #[put("/posts/{id}")]
@@ -45,7 +41,6 @@ async fn update_post(
     ensure_owner(&owner.author_id, &user.id)?;
 
     let post = post.update_post(user.id, post_id, payload.0).await?;
-    let response = Post::from(post);
 
     info!(
         request_id = %request_id(&req),
@@ -54,7 +49,7 @@ async fn update_post(
         "post updated"
     );
 
-    Ok(HttpResponse::Ok().json(response))
+    Ok(HttpResponse::Ok().json(post))
 }
 
 #[delete("posts/{id}")]

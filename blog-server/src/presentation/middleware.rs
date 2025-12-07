@@ -1,8 +1,3 @@
-use std::cell::RefCell;
-use std::future::{Ready, ready};
-use std::rc::Rc;
-use std::task::{Context, Poll};
-use std::time::Instant;
 use crate::application::auth_service::AuthService;
 use crate::data::user_repository::PostgresUserRepository;
 use crate::infrastructure::security::JwtKeys;
@@ -12,6 +7,11 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::header::{HeaderName, HeaderValue};
 use actix_web::{Error, HttpMessage, web};
 use futures_util::future::LocalBoxFuture;
+use std::cell::RefCell;
+use std::future::{Ready, ready};
+use std::rc::Rc;
+use std::task::{Context, Poll};
+use std::time::Instant;
 use tracing::info;
 use uuid::Uuid;
 

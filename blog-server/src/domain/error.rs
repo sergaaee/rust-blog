@@ -6,8 +6,6 @@ use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum DomainError {
-    #[error("validation failed: {0}")]
-    Validation(String),
     #[error("user not found: {0}")]
     UserNotFound(Uuid),
     #[error("user already exists: {0}")]
@@ -32,7 +30,6 @@ struct ErrorBody<'a> {
 impl ResponseError for DomainError {
     fn status_code(&self) -> StatusCode {
         match self {
-            DomainError::Validation(_) => StatusCode::BAD_REQUEST,
             DomainError::UserNotFound(_) | DomainError::PostNotFound(_) => StatusCode::NOT_FOUND,
             DomainError::Unauthorized => StatusCode::UNAUTHORIZED,
             DomainError::Forbidden => StatusCode::FORBIDDEN,
@@ -44,7 +41,6 @@ impl ResponseError for DomainError {
     fn error_response(&self) -> HttpResponse {
         let message = self.to_string();
         let details = match self {
-            DomainError::Validation(msg) => Some(json!({ "message": msg })),
             DomainError::PostNotFound(resource) | DomainError::UserNotFound(resource) => {
                 Some(json!({ "resource": resource }))
             }
