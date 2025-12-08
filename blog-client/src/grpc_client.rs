@@ -38,16 +38,12 @@ impl BlogClientGrpc {
         self.token.as_deref()
     }
 
-    fn with_auth<T>(mut req: Request<T>) -> Request<T> {
-        if let Some(token) = req
-            .extensions()
-            .get::<Option<String>>()
-            .and_then(|o| o.as_deref())
-        {
-            let header_value = format!("Bearer {token}");
-            let metadata_value =
-                MetadataValue::try_from(&header_value).expect("Invalid token format");
-            req.metadata_mut().insert("authorization", metadata_value);
+    fn with_auth<T>(&self, mut req: Request<T>) -> Request<T> {
+        if let Some(token) = &self.token {
+            let header = format!("Bearer {token}")
+                .parse()
+                .expect("Token contains invalid chars");
+            req.metadata_mut().insert("authorization", header);
         }
         req
     }
@@ -143,7 +139,7 @@ impl BlogClientTrait for BlogClientGrpc {
         title: String,
         content: String,
     ) -> Result<Post, BlogClientError> {
-        let request = BlogClientGrpc::with_auth(Request::new(CreatePostRequest { title, content }));
+        let request = self.with_auth(Request::new(CreatePostRequest { title, content }));
 
         let response = self.client.create_post(request).await?;
         let post = response.into_inner();
@@ -157,7 +153,7 @@ impl BlogClientTrait for BlogClientGrpc {
         title: Option<String>,
         content: Option<String>,
     ) -> Result<Post, BlogClientError> {
-        let request = BlogClientGrpc::with_auth(Request::new(UpdatePostRequest {
+        let request = self.with_auth(Request::new(UpdatePostRequest {
             post_id: id.to_string(),
             title,
             content,
@@ -170,7 +166,7 @@ impl BlogClientTrait for BlogClientGrpc {
     }
 
     async fn delete_post(&mut self, id: Uuid) -> Result<(), BlogClientError> {
-        let request = BlogClientGrpc::with_auth(Request::new(DeletePostRequest {
+        let request = self.with_auth(Request::new(DeletePostRequest {
             post_id: id.to_string(),
         }));
 
