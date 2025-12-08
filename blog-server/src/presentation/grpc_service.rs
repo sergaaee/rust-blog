@@ -54,13 +54,13 @@ where
         let req = request.into_inner();
 
         // Базовая валидация
-        if req.username.len() < 6 {
+        if req.username.len() <= 6 {
             return Err(Status::invalid_argument("Username must be ≥6 chars"));
         }
         if !req.email.to_owned().contains("@") {
             return Err(Status::invalid_argument("Invalid email"));
         }
-        if req.password.len() < 8 {
+        if req.password.len() <= 8 {
             return Err(Status::invalid_argument("Password must be ≥8 chars"));
         }
 
