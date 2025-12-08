@@ -15,7 +15,7 @@ pub struct LoginRequest {
     pub email: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AuthResponse {
     pub access_token: String,
     pub expires_in: i64,

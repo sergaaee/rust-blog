@@ -2,7 +2,7 @@ mod application;
 mod data;
 mod domain;
 mod infrastructure;
-mod presentation;
+pub mod presentation;
 mod utils;
 
 use crate::application::post_service::PostService;
@@ -14,6 +14,7 @@ use infrastructure::config::AppConfig;
 use infrastructure::database::{create_pool, run_migrations};
 use infrastructure::logging::init_logging;
 use infrastructure::security::JwtKeys;
+pub use presentation::dto::AuthResponse;
 
 use std::sync::Arc;
 

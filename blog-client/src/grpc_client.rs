@@ -1,13 +1,11 @@
 use crate::blog::blog_service_client::BlogServiceClient;
 use crate::blog::{
-    AuthResponse, CreatePostRequest, DeletePostRequest, GetPostRequest, ListPostsRequest,
-    LoginRequest, Post, RegisterRequest, UpdatePostRequest,
+    CreatePostRequest, DeletePostRequest, GetPostRequest, ListPostsRequest, LoginRequest,
+    RegisterRequest, UpdatePostRequest,
 };
 use crate::error::BlogClientError;
-use crate::{BlogClientTrait, Transport};
-use reqwest::Client;
+use crate::{BlogClientTrait, Post};
 use tonic::Request;
-use tonic::metadata::{Ascii, MetadataValue};
 use tonic::transport::Channel;
 use uuid::Uuid;
 
@@ -111,7 +109,7 @@ impl BlogClientTrait for BlogClientGrpc {
 
         let post = response.into_inner();
 
-        Ok(post)
+        Ok(post.into())
     }
 
     async fn list_posts(
@@ -129,7 +127,11 @@ impl BlogClientTrait for BlogClientGrpc {
         };
         let response = self.client.list_posts(req).await?;
 
-        let posts = response.into_inner().posts;
+        let proto_posts = response.into_inner().posts;
+        let posts: Vec<Post> = proto_posts
+            .into_iter()
+            .map(Into::into)
+            .collect();
 
         Ok(posts)
     }
@@ -144,7 +146,7 @@ impl BlogClientTrait for BlogClientGrpc {
         let response = self.client.create_post(request).await?;
         let post = response.into_inner();
 
-        Ok(post)
+        Ok(post.into())
     }
 
     async fn update_post(
@@ -162,7 +164,7 @@ impl BlogClientTrait for BlogClientGrpc {
         let response = self.client.update_post(request).await?;
         let post = response.into_inner();
 
-        Ok(post)
+        Ok(post.into())
     }
 
     async fn delete_post(&mut self, id: Uuid) -> Result<(), BlogClientError> {
