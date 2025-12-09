@@ -2,16 +2,16 @@ use crate::application::auth_service::AuthService;
 use crate::application::post_service::PostService;
 use crate::blog::blog_service_server::BlogService;
 use crate::blog::{
-    AuthResponse, CreatePostRequest, DeletePostRequest, GetPostRequest, ListPostsRequest,
-    ListPostsResponse, LoginRequest, Post as ProtoPost, RegisterRequest,
-    UpdatePostRequest as ProtoUpdatePostRequest,
+    AuthResponse, CreatePostRequest as ProtoCreatePostRequest, DeletePostRequest, GetPostRequest,
+    ListPostsRequest, ListPostsResponse, LoginRequest as ProtoLoginRequest, Post as ProtoPost,
+    RegisterRequest as ProtoRegisterRequest, UpdatePostRequest as ProtoUpdatePostRequest,
 };
 use crate::data::post_repository::PostRepository;
 use crate::data::user_repository::UserRepository;
 use crate::domain::error::DomainError;
 use crate::domain::post::Post;
 use crate::infrastructure::security::Claims;
-use crate::presentation::dto::UpdatePostRequest;
+use crate::presentation::dto::{CreatePostRequest, LoginRequest, RegisterRequest, UpdatePostRequest};
 use chrono::{DateTime, Utc};
 use prost_types::Timestamp;
 use std::sync::Arc;
@@ -49,7 +49,7 @@ where
 {
     async fn register(
         &self,
-        request: Request<RegisterRequest>,
+        request: Request<ProtoRegisterRequest>,
     ) -> Result<Response<AuthResponse>, Status> {
         let req = request.into_inner();
 
@@ -66,7 +66,7 @@ where
 
         let user = self
             .auth_service
-            .register(req.username, req.email, req.password)
+            .register(&req.into())
             .await
             .map_err(map_domain_error_to_status)?;
 
@@ -87,7 +87,7 @@ where
 
     async fn login(
         &self,
-        request: Request<LoginRequest>,
+        request: Request<ProtoLoginRequest>,
     ) -> Result<Response<AuthResponse>, Status> {
         let req = request.into_inner();
 
@@ -100,11 +100,9 @@ where
 
         let token = self
             .auth_service
-            .login(req.username.as_str(), req.password.as_str())
+            .login(&req.into())
             .await
             .map_err(map_domain_error_to_status)?;
-
-        tracing::info!("Successful login: username={}", req.username);
 
         Ok(Response::new(AuthResponse {
             access_token: token,
@@ -115,7 +113,7 @@ where
 
     async fn create_post(
         &self,
-        request: Request<CreatePostRequest>,
+        request: Request<ProtoCreatePostRequest>,
     ) -> Result<Response<ProtoPost>, Status> {
         let token = extract_token_from_request(&request)?;
         let user: Claims = self
@@ -130,7 +128,7 @@ where
 
         let post = self
             .post_service
-            .create_post(user_id, req.title, req.content)
+            .create_post(user_id, req.into())
             .await
             .map_err(map_domain_error_to_status)?;
 
@@ -246,7 +244,7 @@ where
         let post_id = Uuid::parse_str(req.post_id.as_str()).unwrap();
 
         self.post_service
-            .delete_post(user_id, post_id)
+            .delete_post(user_id, req)
             .await
             .map_err(map_domain_error_to_status)?;
 
@@ -323,6 +321,34 @@ impl From<ProtoUpdatePostRequest> for UpdatePostRequest {
         UpdatePostRequest {
             title: update.title,
             content: update.content,
+        }
+    }
+}
+
+impl From<ProtoCreatePostRequest> for CreatePostRequest {
+    fn from(update: ProtoCreatePostRequest) -> Self {
+        CreatePostRequest {
+            title: update.title,
+            content: update.content,
+        }
+    }
+}
+
+impl From<ProtoRegisterRequest> for RegisterRequest {
+    fn from(user: ProtoRegisterRequest) -> Self {
+        RegisterRequest {
+            username: user.username,
+            email: user.email,
+            password: user.password,
+        }
+    }
+}
+
+impl From<ProtoLoginRequest> for LoginRequest {
+    fn from(user: ProtoLoginRequest) -> Self {
+        LoginRequest {
+            email: user.username,
+            password: user.password,
         }
     }
 }

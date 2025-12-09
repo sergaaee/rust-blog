@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use crate::data::post_repository::PostRepository;
 use crate::domain::{error::DomainError, post::Post};
-use crate::presentation::dto::UpdatePostRequest;
+use crate::presentation::dto::{CreatePostRequest, UpdatePostRequest};
 use tracing::instrument;
 use uuid::Uuid;
+use crate::blog::{DeletePostRequest};
 
 #[derive(Clone)]
 pub struct PostService<R: PostRepository + 'static> {
@@ -39,10 +40,9 @@ where
     pub async fn create_post(
         &self,
         author_id: Uuid,
-        title: String,
-        content: String,
+        create: CreatePostRequest
     ) -> Result<Post, DomainError> {
-        let post = Post::new(author_id, title, content);
+        let post = Post::new(author_id, create.title, create.content);
         self.repo.create(post).await
     }
 
@@ -61,7 +61,7 @@ where
     }
 
     #[instrument(skip(self))]
-    pub async fn delete_post(&self, author_id: Uuid, post_id: Uuid) -> Result<(), DomainError> {
-        self.repo.delete_post(post_id, author_id).await
+    pub async fn delete_post(&self, author_id: Uuid, req: DeletePostRequest) -> Result<(), DomainError> {
+        self.repo.delete_post(author_id, req).await
     }
 }

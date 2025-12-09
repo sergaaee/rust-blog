@@ -1,3 +1,4 @@
+use crate::blog::DeletePostRequest;
 use crate::domain::error::DomainError;
 use crate::domain::post::Post;
 use crate::presentation::dto::UpdatePostRequest;
@@ -17,7 +18,8 @@ pub trait PostRepository: Send + Sync {
         author_id: Uuid,
         update: UpdatePostRequest,
     ) -> Result<Option<Post>, DomainError>;
-    async fn delete_post(&self, id: Uuid, author_id: Uuid) -> Result<(), DomainError>;
+    async fn delete_post(&self, author_id: Uuid, req: DeletePostRequest)
+    -> Result<(), DomainError>;
     async fn get_posts(
         &self,
         limit: Option<usize>,
@@ -115,7 +117,14 @@ impl PostRepository for PostgresPostRepository {
         Ok(post)
     }
 
-    async fn delete_post(&self, id: Uuid, author_id: Uuid) -> Result<(), DomainError> {
+    async fn delete_post(
+        &self,
+        author_id: Uuid,
+        req: DeletePostRequest,
+    ) -> Result<(), DomainError> {
+        let id = Uuid::parse_str(req.post_id.as_str())
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+
         let deleted = sqlx::query("DELETE FROM posts WHERE id = $1 AND author_id = $2")
             .bind(id)
             .bind(author_id)

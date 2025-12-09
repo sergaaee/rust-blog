@@ -8,6 +8,7 @@ use serde_json::json;
 use std::sync::Arc;
 use tracing::info;
 use uuid::Uuid;
+use crate::blog::DeletePostRequest;
 
 #[post("")]
 async fn create_post(
@@ -17,7 +18,7 @@ async fn create_post(
     payload: web::Json<CreatePostRequest>,
 ) -> Result<HttpResponse, DomainError> {
     let post = post
-        .create_post(user.id, payload.title.clone(), payload.content.clone())
+        .create_post(user.id, payload.0)
         .await?;
 
     info!(
@@ -64,7 +65,11 @@ async fn delete_post(
     let owner = post.get_post(post_id).await?;
     ensure_owner(&owner.author_id, &user.id)?;
 
-    post.delete_post(user.id, post_id).await?;
+    let request = DeletePostRequest {
+        post_id: post_id.to_string()
+    };
+
+    post.delete_post(user.id, request).await?;
 
     info!(
         request_id = %request_id(&req),

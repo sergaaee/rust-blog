@@ -2,7 +2,7 @@ use crate::domain::post::Post;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 pub struct Pagination {
     #[serde(default)]
     pub limit: Option<usize>,

@@ -5,6 +5,7 @@ use crate::presentation::dto::{AuthResponse, LoginRequest, RegisterRequest};
 use actix_web::{HttpResponse, Responder, Scope, post, web};
 use std::sync::Arc;
 use tracing::info;
+use crate::presentation::handlers::post::update_post;
 
 pub fn scope() -> Scope {
     web::scope("/auth")
@@ -20,20 +21,23 @@ async fn register(
 ) -> Result<impl Responder, DomainError> {
     let user = service
         .register(
-            payload.username.clone(),
-            payload.email.clone(),
-            payload.password.clone(),
+            &payload.0
         )
         .await?;
 
     info!(user_id = %user.id, email = %user.email, "user registered");
 
+    let log_req = LoginRequest {
+        email: user.email,
+        password: payload.password.clone(),
+    };
+
     let expires_in = 3600 * 24; // 24 часа
     let jwt = service
-        .login(user.email.as_str(), &payload.password)
+        .login(&log_req)
         .await?;
 
-    info!(email = %user.email, "user logged in");
+    info!(email = %log_req.email, "user logged in");
 
     Ok(HttpResponse::Created().json(AuthResponse {
         access_token: jwt,
@@ -49,7 +53,7 @@ async fn login(
 ) -> Result<impl Responder, DomainError> {
     let expires_in = 3600; // 1 час
     let jwt = service
-        .login(payload.email.as_str(), &payload.password)
+        .login(&payload.0)
         .await?;
 
     info!(email = %payload.email, "user logged in");
@@ -67,7 +71,7 @@ async fn token(
     payload: web::Json<LoginRequest>,
 ) -> Result<impl Responder, DomainError> {
     let expires_in = 3600; // 1 час
-    let jwt = service.login(&payload.email, &payload.password).await?;
+    let jwt = service.login(&payload.0).await?;
     Ok(HttpResponse::Ok().json(AuthResponse {
         access_token: jwt,
         expires_in,
