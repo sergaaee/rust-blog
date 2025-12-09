@@ -1,18 +1,19 @@
 use crate::application::post_service::PostService;
 use crate::data::post_repository::PostgresPostRepository;
 use crate::domain::error::DomainError;
-use crate::presentation::dto::{CreatePostRequest, UpdatePostRequest};
+use crate::presentation::dto::{CreatePostRequest, Pagination, UpdatePostRequest};
 use crate::presentation::utils::{AuthenticatedUser, ensure_owner};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, delete, get, post, put, web};
 use serde_json::json;
+use std::sync::Arc;
 use tracing::info;
 use uuid::Uuid;
 
-#[post("/posts")]
+#[post("/")]
 async fn create_post(
     req: HttpRequest,
     user: AuthenticatedUser,
-    post: web::Data<PostService<PostgresPostRepository>>,
+    post: web::Data<Arc<PostService<PostgresPostRepository>>>,
     payload: web::Json<CreatePostRequest>,
 ) -> Result<HttpResponse, DomainError> {
     let post = post
@@ -28,11 +29,11 @@ async fn create_post(
     Ok(HttpResponse::Created().json(post))
 }
 
-#[put("/posts/{id}")]
+#[put("/{id}")]
 async fn update_post(
     req: HttpRequest,
     user: AuthenticatedUser,
-    post: web::Data<PostService<PostgresPostRepository>>,
+    post: web::Data<Arc<PostService<PostgresPostRepository>>>,
     payload: web::Json<UpdatePostRequest>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, DomainError> {
@@ -52,11 +53,11 @@ async fn update_post(
     Ok(HttpResponse::Ok().json(post))
 }
 
-#[delete("posts/{id}")]
+#[delete("/{id}")]
 async fn delete_post(
     req: HttpRequest,
     user: AuthenticatedUser,
-    post: web::Data<PostService<PostgresPostRepository>>,
+    post: web::Data<Arc<PostService<PostgresPostRepository>>>,
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, DomainError> {
     let post_id = path.into_inner();
@@ -75,14 +76,14 @@ async fn delete_post(
     Ok(HttpResponse::NoContent().json("deleted"))
 }
 
-#[get("posts")]
+#[get("/posts")]
 async fn get_posts(
     req: HttpRequest,
-    post: web::Data<PostService<PostgresPostRepository>>,
-    path: web::Path<(Option<usize>, Option<usize>)>,
+    post: web::Data<Arc<PostService<PostgresPostRepository>>>,
+    query: web::Query<Pagination>,
 ) -> Result<HttpResponse, DomainError> {
-    let (limit, offset) = path.into_inner();
-    let posts = post.get_posts(limit, offset).await?;
+    let pagination = query.into_inner();
+    let posts = post.get_posts(pagination.limit, pagination.offset).await?;
 
     info!(
         request_id = %request_id(&req),
@@ -92,8 +93,8 @@ async fn get_posts(
     Ok(HttpResponse::Ok().json(json!({
         "posts": posts,
         "total": posts.len(),
-        "limit": limit,
-        "offset": offset
+        "limit": pagination.limit,
+        "offset": pagination.offset
     })))
 }
 fn request_id(req: &HttpRequest) -> String {

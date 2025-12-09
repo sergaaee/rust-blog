@@ -10,6 +10,7 @@ use futures_util::future::LocalBoxFuture;
 use std::cell::RefCell;
 use std::future::{Ready, ready};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
 use tracing::info;
@@ -131,7 +132,7 @@ where
         let service = Rc::clone(&self.service);
 
         let auth_service = req
-            .app_data::<web::Data<AuthService<PostgresUserRepository>>>()
+            .app_data::<web::Data<Arc<AuthService<PostgresUserRepository>>>>()
             .cloned();
 
         let auth_header = req

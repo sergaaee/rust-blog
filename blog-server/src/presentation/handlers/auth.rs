@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::application::auth_service::AuthService;
 use crate::data::user_repository::PostgresUserRepository;
 use crate::domain::error::DomainError;
@@ -6,15 +7,15 @@ use actix_web::{HttpResponse, Responder, Scope, post, web};
 use tracing::info;
 
 pub fn scope() -> Scope {
-    web::scope("")
+    web::scope("/auth")
         .service(register)
         .service(login)
         .service(token)
 }
 
-#[post("/auth/register")]
+#[post("/register")]
 async fn register(
-    service: web::Data<AuthService<PostgresUserRepository>>,
+    service: web::Data<Arc<AuthService<PostgresUserRepository>>>,
     payload: web::Json<RegisterRequest>,
 ) -> Result<impl Responder, DomainError> {
     let user = service
@@ -34,9 +35,9 @@ async fn register(
     })))
 }
 
-#[post("/auth/login")]
+#[post("/login")]
 async fn login(
-    service: web::Data<AuthService<PostgresUserRepository>>,
+    service: web::Data<Arc<AuthService<PostgresUserRepository>>>,
     payload: web::Json<LoginRequest>,
 ) -> Result<impl Responder, DomainError> {
     let expires_in = 3600; // 1 час
@@ -51,9 +52,9 @@ async fn login(
     }))
 }
 
-#[post("/auth/token")]
+#[post("/token")]
 async fn token(
-    service: web::Data<AuthService<PostgresUserRepository>>,
+    service: web::Data<Arc<AuthService<PostgresUserRepository>>>,
     payload: web::Json<LoginRequest>,
 ) -> Result<impl Responder, DomainError> {
     let expires_in = 3600; // 1 час
