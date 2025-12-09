@@ -17,25 +17,37 @@ struct Cli {
 #[derive(Parser, Debug)]
 enum Command {
     Register {
+        #[clap(long)]
         username: String,
+        #[clap(long)]
         email: String,
+        #[clap(long)]
         password: String,
     },
     Login {
+        #[clap(long)]
         username: String,
+        #[clap(long)]
         password: String,
     },
     ListPosts {
+        #[clap(long)]
         limit: Option<u32>,
+        #[clap(long)]
         offset: Option<u32>,
     },
     CreatePost {
+        #[clap(long)]
         title: String,
+        #[clap(long)]
         content: String,
     },
     GetPosts {
+        #[clap(long)]
         author_id: Option<Uuid>,
+        #[clap(long)]
         limit: Option<u32>,
+        #[clap(long)]
         offset: Option<u32>,
     },
     UpdatePost {
