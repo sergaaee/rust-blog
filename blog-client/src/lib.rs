@@ -1,24 +1,26 @@
-use crate::error::BlogClientError;
+pub use crate::error::BlogClientError;
+use async_trait::async_trait;
 use blog::Post as ProtoPost;
 use chrono::{DateTime, NaiveDateTime, Utc};
+use derive_more::Display;
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use uuid::Uuid;
 
 mod error;
 mod grpc_client;
 mod http_client;
 
+pub use grpc_client::BlogClientGrpc;
+pub use http_client::BlogClientHttp;
+
 pub mod blog {
     tonic::include_proto!("blog");
 }
 
-enum Transport {
-    Http(String),
-    Grpc(String),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Display)]
+#[display("Post {{ id: {}, title: {}, author_id: {} }}", id, title, author_id)]
 pub struct Post {
     pub id: Uuid,
     pub author_id: Uuid,
@@ -78,18 +80,19 @@ impl ProtobufToChrono for Timestamp {
     }
 }
 
-trait BlogClientTrait {
+#[async_trait(?Send)]
+pub trait BlogClientTrait: Send + Sync + 'static {
     async fn register(
         &mut self,
         username: String,
         email: String,
         password: String,
     ) -> Result<(), BlogClientError>;
-    async fn login(&mut self, username: String, password: String) -> Result<(), BlogClientError>;
+    async fn login(&mut self, email: String, password: String) -> Result<(), BlogClientError>;
     async fn get_post_by_id(&mut self, id: Uuid) -> Result<Post, BlogClientError>;
     async fn list_posts(
         &mut self,
-        author_id: Option<String>,
+        author_id: Option<Uuid>,
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<Post>, BlogClientError>;

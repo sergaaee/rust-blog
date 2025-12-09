@@ -1,9 +1,10 @@
 use crate::BlogClientTrait;
 use crate::Post;
 use crate::error::BlogClientError;
-use futures_util::SinkExt;
+use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::fs;
 use std::sync::Arc;
 use uuid::Uuid;
 #[derive(Clone)]
@@ -37,7 +38,8 @@ impl BlogClientHttp {
     }
 
     pub fn set_token(&mut self, token: String) {
-        self.token = Some(token);
+        self.token = Some(token.clone());
+        fs::write(".blog_token", token).unwrap();
     }
 
     pub fn token(&self) -> Option<&str> {
@@ -45,17 +47,32 @@ impl BlogClientHttp {
     }
 
     fn auth_header(&self) -> Result<Option<reqwest::header::HeaderValue>, BlogClientError> {
+        // 1. Берём токен из self или из файла
         let token = match &self.token {
-            Some(t) => t,
-            None => return Ok(None),
+            Some(t) if !t.is_empty() => t.clone(),
+            _ => {
+                // пытаемся прочитать из файла
+                let t =
+                    fs::read_to_string(".blog_token").map_err(|_| BlogClientError::Unauthorized)?;
+                t.trim().to_string()
+            }
         };
-        let value = format!("Bearer {token}");
+
+        // 2. Если после всего токен пустой → нет авторизации
+        if token.is_empty() {
+            return Ok(None);
+        }
+
+        // 3. Формируем заголовок
+        let value = format!("Bearer {}", token);
         let header = reqwest::header::HeaderValue::from_str(&value)
             .map_err(|_| BlogClientError::Unauthorized)?;
+
         Ok(Some(header))
     }
 }
 
+#[async_trait(?Send)]
 impl BlogClientTrait for BlogClientHttp {
     async fn register(
         &mut self,
@@ -65,7 +82,7 @@ impl BlogClientTrait for BlogClientHttp {
     ) -> Result<(), BlogClientError> {
         let resp = self
             .client
-            .post(format!("{}/auth/register", self.base_url))
+            .post(format!("{}/api/auth/register", self.base_url))
             .json(&serde_json::json!({
                 "username": username,
                 "email": email,
@@ -84,12 +101,12 @@ impl BlogClientTrait for BlogClientHttp {
         Ok(())
     }
 
-    async fn login(&mut self, username: String, password: String) -> Result<(), BlogClientError> {
+    async fn login(&mut self, email: String, password: String) -> Result<(), BlogClientError> {
         let resp = self
             .client
-            .post(format!("{}/auth/login", self.base_url))
+            .post(format!("{}/api/auth/login", self.base_url))
             .json(&serde_json::json!({
-                "username": username,
+                "email": email,
                 "password": password,
             }))
             .send()
@@ -108,7 +125,7 @@ impl BlogClientTrait for BlogClientHttp {
     async fn get_post_by_id(&mut self, id: Uuid) -> Result<Post, BlogClientError> {
         let resp = self
             .client
-            .get(format!("{}/posts/{}", self.base_url, id))
+            .get(format!("{}/api/posts/{}", self.base_url, id))
             .send()
             .await?;
 
@@ -122,7 +139,7 @@ impl BlogClientTrait for BlogClientHttp {
 
     async fn list_posts(
         &mut self,
-        author_id: Option<String>,
+        author_id: Option<Uuid>,
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<Post>, BlogClientError> {
@@ -131,7 +148,7 @@ impl BlogClientTrait for BlogClientHttp {
         let resp = self
             .client
             .get(format!(
-                "{}/posts?limit={}&offset={}",
+                "{}/api/posts?limit={}&offset={}",
                 self.base_url, limit, offset
             ))
             .send()
@@ -150,7 +167,7 @@ impl BlogClientTrait for BlogClientHttp {
         title: String,
         content: String,
     ) -> Result<Post, BlogClientError> {
-        let mut req = self.client.post(format!("{}/posts", self.base_url));
+        let mut req = self.client.post(format!("{}/api/posts", self.base_url));
 
         if let Some(h) = self.auth_header()? {
             req = req.header(reqwest::header::AUTHORIZATION, h);
@@ -178,7 +195,9 @@ impl BlogClientTrait for BlogClientHttp {
         title: Option<String>,
         content: Option<String>,
     ) -> Result<Post, BlogClientError> {
-        let mut req = self.client.put(format!("{}/posts/{}", self.base_url, id));
+        let mut req = self
+            .client
+            .put(format!("{}/api/posts/{}", self.base_url, id));
 
         if let Some(h) = self.auth_header()? {
             req = req.header(reqwest::header::AUTHORIZATION, h);
@@ -201,7 +220,9 @@ impl BlogClientTrait for BlogClientHttp {
     }
 
     async fn delete_post(&mut self, id: Uuid) -> Result<(), BlogClientError> {
-        let mut req = self.client.delete(format!("{}/posts/{}", self.base_url, id));
+        let mut req = self
+            .client
+            .delete(format!("{}/api/posts/{}", self.base_url, id));
 
         if let Some(h) = self.auth_header()? {
             req = req.header(reqwest::header::AUTHORIZATION, h);

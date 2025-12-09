@@ -1,3 +1,5 @@
+use std::fs;
+use async_trait::async_trait;
 use crate::blog::blog_service_client::BlogServiceClient;
 use crate::blog::{
     CreatePostRequest, DeletePostRequest, GetPostRequest, ListPostsRequest, LoginRequest,
@@ -29,7 +31,8 @@ impl BlogClientGrpc {
     }
 
     pub fn set_token(&mut self, token: String) {
-        self.token = Some(token);
+        self.token = Some(token.clone());
+        fs::write(".blog_token", token).unwrap();
     }
 
     pub fn token(&self) -> Option<&str> {
@@ -47,6 +50,7 @@ impl BlogClientGrpc {
     }
 }
 
+#[async_trait(?Send)]
 impl BlogClientTrait for BlogClientGrpc {
     async fn register(
         &mut self,
@@ -114,12 +118,13 @@ impl BlogClientTrait for BlogClientGrpc {
 
     async fn list_posts(
         &mut self,
-        author_id: Option<String>,
+        author_id: Option<Uuid>,
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<Post>, BlogClientError> {
         let limit = limit.unwrap_or(10).min(100) as i32;
         let offset = offset.unwrap_or(0) as i32;
+        let author_id = Some(author_id.unwrap().to_string());
         let req = ListPostsRequest {
             limit,
             offset,
@@ -128,10 +133,7 @@ impl BlogClientTrait for BlogClientGrpc {
         let response = self.client.list_posts(req).await?;
 
         let proto_posts = response.into_inner().posts;
-        let posts: Vec<Post> = proto_posts
-            .into_iter()
-            .map(Into::into)
-            .collect();
+        let posts: Vec<Post> = proto_posts.into_iter().map(Into::into).collect();
 
         Ok(posts)
     }
