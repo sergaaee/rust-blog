@@ -43,9 +43,10 @@ impl PostRepository for PostgresPostRepository {
         sqlx::query(
             r#"
             INSERT INTO posts (id, author_id, title, content, created_at, updated_at)
-            VALUES (gen_random_uuid(), $1, $2, $3, $4, $4)
+            VALUES ($1, $2, $3, $4, $5, $5)
             "#,
         )
+        .bind(post.id)
         .bind(post.author_id)
         .bind(&post.title)
         .bind(&post.content)
@@ -84,7 +85,6 @@ impl PostRepository for PostgresPostRepository {
         update: UpdatePostRequest,
     ) -> Result<Option<Post>, DomainError> {
         let now = Utc::now();
-
         let post = sqlx::query_as::<_, Post>(
             r#"
             UPDATE posts

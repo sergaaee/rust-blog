@@ -62,6 +62,6 @@ where
 
     #[instrument(skip(self))]
     pub async fn delete_post(&self, author_id: Uuid, post_id: Uuid) -> Result<(), DomainError> {
-        self.repo.delete_post(author_id, post_id).await
+        self.repo.delete_post(post_id, author_id).await
     }
 }

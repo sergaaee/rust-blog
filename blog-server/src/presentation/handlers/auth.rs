@@ -1,9 +1,9 @@
-use std::sync::Arc;
 use crate::application::auth_service::AuthService;
 use crate::data::user_repository::PostgresUserRepository;
 use crate::domain::error::DomainError;
 use crate::presentation::dto::{AuthResponse, LoginRequest, RegisterRequest};
 use actix_web::{HttpResponse, Responder, Scope, post, web};
+use std::sync::Arc;
 use tracing::info;
 
 pub fn scope() -> Scope {
@@ -28,11 +28,18 @@ async fn register(
 
     info!(user_id = %user.id, email = %user.email, "user registered");
 
-    Ok(HttpResponse::Created().json(serde_json::json!({
-        "username": user.username,
-        "user_id": user.id,
-        "email": user.email
-    })))
+    let expires_in = 3600 * 24; // 24 часа
+    let jwt = service
+        .login(user.email.as_str(), &payload.password)
+        .await?;
+
+    info!(email = %user.email, "user logged in");
+
+    Ok(HttpResponse::Created().json(AuthResponse {
+        access_token: jwt,
+        expires_in,
+        token_type: "Bearer".to_string(),
+    }))
 }
 
 #[post("/login")]
@@ -44,7 +51,9 @@ async fn login(
     let jwt = service
         .login(payload.email.as_str(), &payload.password)
         .await?;
+
     info!(email = %payload.email, "user logged in");
+
     Ok(HttpResponse::Ok().json(AuthResponse {
         access_token: jwt,
         expires_in,

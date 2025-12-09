@@ -29,11 +29,12 @@ impl UserRepository for PostgresUserRepository {
     async fn create(&self, user: User) -> Result<User, DomainError> {
         sqlx::query(
             r#"
-            INSERT INTO users (id, email, password_hash)
-            VALUES ($1, $2, $3)
+            INSERT INTO users (id, username, email, password_hash)
+            VALUES ($1, $2, $3, $4)
             "#,
         )
         .bind(user.id)
+        .bind(&user.username)
         .bind(&user.email)
         .bind(&user.password_hash)
         .execute(&self.pool)
@@ -42,10 +43,10 @@ impl UserRepository for PostgresUserRepository {
             error!("failed to create user: {}", e);
             if e.as_database_error()
                 .and_then(|db| db.constraint())
-                .map(|c| c.contains("users_email"))
+                .map(|c| c.contains("users_email") || c.contains("users_username"))
                 == Some(true)
             {
-                DomainError::UserAlreadyExists("email already registered".to_string())
+                DomainError::UserAlreadyExists("username or email already registered".to_string())
             } else {
                 DomainError::Internal(format!("database error: {}", e))
             }

@@ -9,7 +9,9 @@ use crate::presentation::handlers;
 use crate::presentation::middleware::{JwtAuthMiddleware, RequestIdMiddleware, TimingMiddleware};
 use actix_cors::Cors;
 use actix_web::middleware::{DefaultHeaders, Logger};
-use actix_web::{App, HttpServer, web};
+use actix_web::{App, HttpResponse, HttpServer, Responder, web};
+use chrono::{DateTime, Utc};
+use serde::Serialize;
 use std::sync::Arc;
 use tokio::signal;
 use tonic::transport::Server;
@@ -49,15 +51,16 @@ pub async fn start_rest_server<
             .app_data(web::Data::new(auth_service.clone()))
             .service(
                 web::scope("/api")
-                    .service(handlers::auth::scope())
+                    .route("/health", web::get().to(health))
                     .service(handlers::post::get_posts)
                     .service(
-                        web::scope("")
+                        web::scope("/posts")
                             .wrap(JwtAuthMiddleware::new(auth_service.keys().clone()))
                             .service(handlers::post::create_post)
                             .service(handlers::post::delete_post)
                             .service(handlers::post::update_post),
-                    ),
+                    )
+                    .service(handlers::auth::scope()),
             )
     })
     .bind(bind_address)?
@@ -109,4 +112,17 @@ fn build_cors(config: &AppConfig) -> Cors {
     }
 
     cors
+}
+
+#[derive(Debug, Serialize)]
+pub struct HealthResponse {
+    pub status: &'static str,
+    pub timestamp: DateTime<Utc>,
+}
+
+async fn health() -> impl Responder {
+    HttpResponse::Ok().json(HealthResponse {
+        status: "ok",
+        timestamp: Utc::now(),
+    })
 }

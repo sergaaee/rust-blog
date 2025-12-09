@@ -9,7 +9,7 @@ use std::sync::Arc;
 use tracing::info;
 use uuid::Uuid;
 
-#[post("/")]
+#[post("")]
 async fn create_post(
     req: HttpRequest,
     user: AuthenticatedUser,
@@ -41,7 +41,7 @@ async fn update_post(
     let owner = post.get_post(post_id).await?;
     ensure_owner(&owner.author_id, &user.id)?;
 
-    let post = post.update_post(user.id, post_id, payload.0).await?;
+    let post = post.update_post(post_id, user.id, payload.0).await?;
 
     info!(
         request_id = %request_id(&req),
