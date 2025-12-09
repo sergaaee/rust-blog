@@ -1,5 +1,3 @@
-use std::fs;
-use async_trait::async_trait;
 use crate::blog::blog_service_client::BlogServiceClient;
 use crate::blog::{
     CreatePostRequest, DeletePostRequest, GetPostRequest, ListPostsRequest, LoginRequest,
@@ -7,6 +5,8 @@ use crate::blog::{
 };
 use crate::error::BlogClientError;
 use crate::{BlogClientTrait, Post};
+use async_trait::async_trait;
+use std::fs;
 use tonic::Request;
 use tonic::transport::Channel;
 use uuid::Uuid;
@@ -39,14 +39,25 @@ impl BlogClientGrpc {
         self.token.as_deref()
     }
 
-    fn with_auth<T>(&self, mut req: Request<T>) -> Request<T> {
-        if let Some(token) = &self.token {
-            let header = format!("Bearer {token}")
-                .parse()
-                .expect("Token contains invalid chars");
-            req.metadata_mut().insert("authorization", header);
+    fn with_auth<T>(&self, mut req: Request<T>) -> Result<Request<T>, BlogClientError> {
+        let token = if let Some(t) = &self.token {
+            t.clone()
+        } else {
+            // пытаемся прочитать из файла
+            let t = fs::read_to_string(".blog_token").map_err(|_| BlogClientError::Unauthorized)?;
+            t.trim().to_string()
+        };
+
+        if token.is_empty() {
+            return Err(BlogClientError::Unauthorized);
         }
-        req
+
+        let header = format!("Bearer {token}")
+            .parse()
+            .map_err(|_| BlogClientError::Unauthorized)?;
+        req.metadata_mut().insert("authorization", header);
+
+        Ok(req)
     }
 }
 
@@ -54,11 +65,11 @@ impl BlogClientGrpc {
 impl BlogClientTrait for BlogClientGrpc {
     async fn register(
         &mut self,
-        username: String,
         email: String,
+        username: String,
         password: String,
     ) -> Result<(), BlogClientError> {
-        if username.len() <= 6 {
+        if username.len() < 6 {
             return Err(BlogClientError::InvalidRequest(
                 "Username must be at least 6 chars long".to_string(),
             ));
@@ -66,7 +77,7 @@ impl BlogClientTrait for BlogClientGrpc {
         if !email.to_owned().contains("@") {
             return Err(BlogClientError::InvalidRequest("Wrong email".to_string()));
         }
-        if password.len() <= 8 {
+        if password.len() < 8 {
             return Err(BlogClientError::InvalidRequest(
                 "Passwords must be at least 8 chars long".to_string(),
             ));
@@ -84,13 +95,13 @@ impl BlogClientTrait for BlogClientGrpc {
     }
 
     async fn login(&mut self, username: String, password: String) -> Result<(), BlogClientError> {
-        if username.len() <= 6 {
+        if username.len() < 6 {
             return Err(BlogClientError::InvalidRequest(
                 "Username must be at least 6 chars long".to_string(),
             ));
         }
 
-        if password.len() <= 8 {
+        if password.len() < 8 {
             return Err(BlogClientError::InvalidRequest(
                 "Passwords must be at least 8 chars long".to_string(),
             ));
@@ -124,7 +135,7 @@ impl BlogClientTrait for BlogClientGrpc {
     ) -> Result<Vec<Post>, BlogClientError> {
         let limit = limit.unwrap_or(10).min(100) as i32;
         let offset = offset.unwrap_or(0) as i32;
-        let author_id = Some(author_id.unwrap().to_string());
+        let author_id = author_id.map(|id| id.to_string());
         let req = ListPostsRequest {
             limit,
             offset,
@@ -143,7 +154,7 @@ impl BlogClientTrait for BlogClientGrpc {
         title: String,
         content: String,
     ) -> Result<Post, BlogClientError> {
-        let request = self.with_auth(Request::new(CreatePostRequest { title, content }));
+        let request = self.with_auth(Request::new(CreatePostRequest { title, content }))?;
 
         let response = self.client.create_post(request).await?;
         let post = response.into_inner();
@@ -161,7 +172,7 @@ impl BlogClientTrait for BlogClientGrpc {
             post_id: id.to_string(),
             title,
             content,
-        }));
+        }))?;
 
         let response = self.client.update_post(request).await?;
         let post = response.into_inner();
@@ -172,7 +183,7 @@ impl BlogClientTrait for BlogClientGrpc {
     async fn delete_post(&mut self, id: Uuid) -> Result<(), BlogClientError> {
         let request = self.with_auth(Request::new(DeletePostRequest {
             post_id: id.to_string(),
-        }));
+        }))?;
 
         self.client.delete_post(request).await?;
 

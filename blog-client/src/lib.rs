@@ -5,7 +5,6 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use derive_more::Display;
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
 use uuid::Uuid;
 
 mod error;

@@ -71,9 +71,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             password,
         } => {
             client.register(email, username, password).await?;
+            println!("Successfully registered!");
         }
         Command::Login { username, password } => {
             client.login(username, password).await?;
+            println!("Successfully logged in!");
         }
         Command::ListPosts { limit, offset } => {
             let posts = client.list_posts(None, limit, offset).await?;

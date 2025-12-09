@@ -54,13 +54,13 @@ where
         let req = request.into_inner();
 
         // Базовая валидация
-        if req.username.len() <= 6 {
+        if req.username.len() < 6 {
             return Err(Status::invalid_argument("Username must be ≥6 chars"));
         }
         if !req.email.to_owned().contains("@") {
             return Err(Status::invalid_argument("Invalid email"));
         }
-        if req.password.len() <= 8 {
+        if req.password.len() < 8 {
             return Err(Status::invalid_argument("Password must be ≥8 chars"));
         }
 
@@ -90,6 +90,13 @@ where
         request: Request<LoginRequest>,
     ) -> Result<Response<AuthResponse>, Status> {
         let req = request.into_inner();
+
+        if req.username.len() < 6 {
+            return Err(Status::invalid_argument("Username must be ≥6 chars"));
+        }
+        if req.password.len() < 8 {
+            return Err(Status::invalid_argument("Password must be ≥8 chars"));
+        }
 
         let token = self
             .auth_service
@@ -202,7 +209,7 @@ where
 
         let post = self
             .post_service
-            .update_post(user_id, post_id, update_req)
+            .update_post(post_id, user_id, update_req)
             .await
             .map_err(map_domain_error_to_status)?;
 
