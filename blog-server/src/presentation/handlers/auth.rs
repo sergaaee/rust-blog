@@ -46,7 +46,7 @@ async fn login(
 ) -> Result<impl Responder, DomainError> {
     dotenvy::dotenv().ok();
     let expires_in: i64 = std::env::var("ACCESS_TOKEN_EXPIRATION_SECS")
-        .expect("Missing acces token expiration time")
+        .expect("Missing access token expiration time")
         .parse()
         .expect("ACCESS_TOKEN_EXPIRATION_SECS must be an integer");
 
@@ -68,7 +68,7 @@ async fn token(
 ) -> Result<impl Responder, DomainError> {
     dotenvy::dotenv().ok();
     let expires_in: i64 = std::env::var("ACCESS_TOKEN_EXPIRATION_SECS")
-        .expect("Missing acces token expiration time")
+        .expect("Missing access token expiration time")
         .parse()
         .expect("ACCESS_TOKEN_EXPIRATION_SECS must be an integer");
 
