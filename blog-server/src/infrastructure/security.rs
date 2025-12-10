@@ -18,10 +18,16 @@ impl JwtKeys {
     }
 
     pub fn generate_token(&self, user_id: Uuid) -> Result<String, jsonwebtoken::errors::Error> {
+        dotenvy::dotenv().ok();
+        let expiration_time: i64 = std::env::var("ACCESS_TOKEN_EXPIRATION_SECS")
+            .expect("Missing acces token expiration time")
+            .parse()
+            .expect("ACCESS_TOKEN_EXPIRATION_SECS must be an integer");
+
         let claims = Claims {
             sub: user_id.to_string(),
             exp: chrono::Utc::now()
-                .checked_add_signed(chrono::Duration::hours(1))
+                .checked_add_signed(chrono::Duration::seconds(expiration_time))
                 .unwrap()
                 .timestamp() as usize,
             iat: chrono::Utc::now().timestamp() as usize,

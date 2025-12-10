@@ -5,7 +5,6 @@ use crate::presentation::dto::{AuthResponse, LoginRequest, RegisterRequest};
 use actix_web::{HttpResponse, Responder, Scope, post, web};
 use std::sync::Arc;
 use tracing::info;
-use crate::presentation::handlers::post::update_post;
 
 pub fn scope() -> Scope {
     web::scope("/auth")
@@ -19,25 +18,19 @@ async fn register(
     service: web::Data<Arc<AuthService<PostgresUserRepository>>>,
     payload: web::Json<RegisterRequest>,
 ) -> Result<impl Responder, DomainError> {
-    let user = service
-        .register(
-            &payload.0
-        )
-        .await?;
+    let user = service.register(&payload.0).await?;
 
     info!(user_id = %user.id, email = %user.email, "user registered");
 
     let log_req = LoginRequest {
-        email: user.email,
+        username: user.username,
         password: payload.password.clone(),
     };
 
     let expires_in = 3600 * 24; // 24 часа
-    let jwt = service
-        .login(&log_req)
-        .await?;
+    let jwt = service.login(&log_req).await?;
 
-    info!(email = %log_req.email, "user logged in");
+    info!(username = %log_req.username, "user logged in");
 
     Ok(HttpResponse::Created().json(AuthResponse {
         access_token: jwt,
@@ -51,12 +44,15 @@ async fn login(
     service: web::Data<Arc<AuthService<PostgresUserRepository>>>,
     payload: web::Json<LoginRequest>,
 ) -> Result<impl Responder, DomainError> {
-    let expires_in = 3600; // 1 час
-    let jwt = service
-        .login(&payload.0)
-        .await?;
+    dotenvy::dotenv().ok();
+    let expires_in: i64 = std::env::var("ACCESS_TOKEN_EXPIRATION_SECS")
+        .expect("Missing acces token expiration time")
+        .parse()
+        .expect("ACCESS_TOKEN_EXPIRATION_SECS must be an integer");
 
-    info!(email = %payload.email, "user logged in");
+    let jwt = service.login(&payload.0).await?;
+
+    info!(username = %payload.username, "user logged in");
 
     Ok(HttpResponse::Ok().json(AuthResponse {
         access_token: jwt,
@@ -70,7 +66,12 @@ async fn token(
     service: web::Data<Arc<AuthService<PostgresUserRepository>>>,
     payload: web::Json<LoginRequest>,
 ) -> Result<impl Responder, DomainError> {
-    let expires_in = 3600; // 1 час
+    dotenvy::dotenv().ok();
+    let expires_in: i64 = std::env::var("ACCESS_TOKEN_EXPIRATION_SECS")
+        .expect("Missing acces token expiration time")
+        .parse()
+        .expect("ACCESS_TOKEN_EXPIRATION_SECS must be an integer");
+
     let jwt = service.login(&payload.0).await?;
     Ok(HttpResponse::Ok().json(AuthResponse {
         access_token: jwt,

@@ -47,7 +47,7 @@ where
     pub async fn login(&self, login: &LoginRequest) -> Result<String, DomainError> {
         let user = self
             .repo
-            .find_by_email(&login.email.as_str().to_lowercase())
+            .find_by_username(&login.username.as_str().to_lowercase())
             .await?
             .ok_or(DomainError::Unauthorized)?;
 

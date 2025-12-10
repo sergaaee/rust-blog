@@ -101,12 +101,12 @@ impl BlogClientTrait for BlogClientHttp {
         Ok(())
     }
 
-    async fn login(&mut self, email: String, password: String) -> Result<(), BlogClientError> {
+    async fn login(&mut self, username: String, password: String) -> Result<(), BlogClientError> {
         let resp = self
             .client
             .post(format!("{}/api/auth/login", self.base_url))
             .json(&serde_json::json!({
-                "email": email,
+                "username": username,
                 "password": password,
             }))
             .send()

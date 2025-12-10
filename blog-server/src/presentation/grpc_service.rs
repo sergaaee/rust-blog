@@ -347,7 +347,7 @@ impl From<ProtoRegisterRequest> for RegisterRequest {
 impl From<ProtoLoginRequest> for LoginRequest {
     fn from(user: ProtoLoginRequest) -> Self {
         LoginRequest {
-            email: user.username,
+            username: user.username,
             password: user.password,
         }
     }

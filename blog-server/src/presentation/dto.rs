@@ -20,7 +20,7 @@ pub struct RegisterRequest {
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
     pub password: String,
-    pub email: String,
+    pub username: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
