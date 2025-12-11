@@ -1,4 +1,5 @@
 use crate::application::post_service::PostService;
+use crate::blog::DeletePostRequest;
 use crate::data::post_repository::PostgresPostRepository;
 use crate::domain::error::DomainError;
 use crate::presentation::dto::{CreatePostRequest, Pagination, UpdatePostRequest};
@@ -6,9 +7,9 @@ use crate::presentation::utils::{AuthenticatedUser, ensure_owner};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, delete, get, post, put, web};
 use serde_json::json;
 use std::sync::Arc;
+use actix_web::web::post;
 use tracing::info;
 use uuid::Uuid;
-use crate::blog::DeletePostRequest;
 
 #[post("")]
 async fn create_post(
@@ -17,9 +18,7 @@ async fn create_post(
     post: web::Data<Arc<PostService<PostgresPostRepository>>>,
     payload: web::Json<CreatePostRequest>,
 ) -> Result<HttpResponse, DomainError> {
-    let post = post
-        .create_post(user.id, payload.0)
-        .await?;
+    let post = post.create_post(user.id, payload.0).await?;
 
     info!(
         request_id = %request_id(&req),
@@ -66,7 +65,7 @@ async fn delete_post(
     ensure_owner(&owner.author_id, &user.id)?;
 
     let request = DeletePostRequest {
-        post_id: post_id.to_string()
+        post_id: post_id.to_string(),
     };
 
     post.delete_post(user.id, request).await?;
@@ -101,6 +100,23 @@ async fn get_posts(
         "limit": pagination.limit,
         "offset": pagination.offset
     })))
+}
+
+#[get("/posts/{id}")]
+async fn get_post(
+    req: HttpRequest,
+    post: web::Data<Arc<PostService<PostgresPostRepository>>>,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, DomainError> {
+    let post_id = path.into_inner();
+    let post = post.get_post(post_id).await?;
+
+    info!(
+        request_id = %request_id(&req),
+        "post retrieved"
+    );
+
+    Ok(HttpResponse::Ok().json(post))
 }
 fn request_id(req: &HttpRequest) -> String {
     req.extensions()

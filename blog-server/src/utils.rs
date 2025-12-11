@@ -53,6 +53,7 @@ pub async fn start_rest_server<
                 web::scope("/api")
                     .route("/health", web::get().to(health))
                     .service(handlers::post::get_posts)
+                    .service(handlers::post::get_post)
                     .service(
                         web::scope("/posts")
                             .wrap(JwtAuthMiddleware::new(auth_service.keys().clone()))
