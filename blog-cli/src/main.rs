@@ -42,6 +42,9 @@ enum Command {
         #[clap(long)]
         content: String,
     },
+    GetPost {
+        id: Uuid,
+    },
     GetPosts {
         #[clap(long)]
         author_id: Option<Uuid>,
@@ -117,6 +120,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Command::DeletePost { id } => {
             client.delete_post(id).await?;
             println!("Post deleted!")
+        }
+        Command::GetPost { id } => {
+            let post = client.get_post_by_id(id).await?;
+            println!("Post: {}", post)
         }
     }
 
