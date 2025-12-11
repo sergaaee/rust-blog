@@ -123,11 +123,15 @@ impl BlogClientTrait for BlogClientHttp {
     }
 
     async fn get_post_by_id(&mut self, id: Uuid) -> Result<Post, BlogClientError> {
-        let resp = self
+        let mut req = self
             .client
-            .get(format!("{}/api/posts/{}", self.base_url, id))
-            .send()
-            .await?;
+            .get(format!("{}/api/posts/{}", self.base_url, id));
+
+        if let Some(h) = self.auth_header()? {
+            req = req.header(reqwest::header::AUTHORIZATION, h);
+        }
+
+        let resp = req.send().await?;
 
         if resp.status().is_success() {
             let post: Post = resp.json().await?;
