@@ -6,5 +6,5 @@ edition.workspace = true
 [dependencies]
 clap = {version = "4", features = ["derive"]}
 blog-client = {path = "../blog-client"}
-tokio = "1.48"
-uuid = { version = "1.19.0", features = ["v4"] }
+tokio = {workspace = true}
+uuid = { workspace = true }

@@ -11,7 +11,9 @@ use crate::data::user_repository::UserRepository;
 use crate::domain::error::DomainError;
 use crate::domain::post::Post;
 use crate::infrastructure::security::Claims;
-use crate::presentation::dto::{CreatePostRequest, LoginRequest, RegisterRequest, UpdatePostRequest};
+use crate::presentation::dto::{
+    CreatePostRequest, LoginRequest, RegisterRequest, UpdatePostRequest,
+};
 use chrono::{DateTime, Utc};
 use prost_types::Timestamp;
 use std::sync::Arc;

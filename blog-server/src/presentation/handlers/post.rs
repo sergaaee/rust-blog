@@ -4,10 +4,10 @@ use crate::data::post_repository::PostgresPostRepository;
 use crate::domain::error::DomainError;
 use crate::presentation::dto::{CreatePostRequest, Pagination, UpdatePostRequest};
 use crate::presentation::utils::{AuthenticatedUser, ensure_owner};
+use actix_web::web::post;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, delete, get, post, put, web};
 use serde_json::json;
 use std::sync::Arc;
-use actix_web::web::post;
 use tracing::info;
 use uuid::Uuid;
 

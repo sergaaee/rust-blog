@@ -422,7 +422,7 @@ fn EditPost(id: Uuid) -> Element {
 
 #[component]
 fn Login() -> Element {
-    let token_sig = use_context::<Signal<Option<String>>>();
+    let mut token_sig = use_context::<Signal<Option<String>>>();
     let navigator = use_navigator();
 
     let mut username = use_signal(|| String::new());
@@ -432,8 +432,6 @@ fn Login() -> Element {
         evt.prevent_default();
         let username = username.read().clone();
         let password = password.read().clone();
-        let mut token_sig = token_sig.clone();
-        let navigator = navigator.clone();
         spawn(async move {
             let mut client = BlogClientHttp {
                 base_url: BASE_URL.to_string(),
@@ -512,7 +510,7 @@ fn Login() -> Element {
 
 #[component]
 fn Register() -> Element {
-    let token_sig = use_context::<Signal<Option<String>>>();
+    let mut token_sig = use_context::<Signal<Option<String>>>();
     let navigator = use_navigator();
 
     let mut username = use_signal(|| String::new());
@@ -524,8 +522,6 @@ fn Register() -> Element {
         let username = username.read().clone();
         let email = email.read().clone();
         let password = password.read().clone();
-        let mut token_sig = token_sig.clone();
-        let navigator = navigator.clone();
         spawn(async move {
             let mut client = BlogClientHttp {
                 base_url: BASE_URL.to_string(),

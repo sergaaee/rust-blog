@@ -33,13 +33,14 @@ where
     }
 
     #[instrument(skip(self))]
-    pub async fn register(
-        &self,
-        user: &RegisterRequest
-    ) -> Result<User, DomainError> {
-        let hash =
-            hash_password(user.password.as_str()).map_err(|err| DomainError::Internal(err.to_string()))?;
-        let user = User::new(user.username.to_string(), user.email.as_str().to_lowercase(), hash);
+    pub async fn register(&self, user: &RegisterRequest) -> Result<User, DomainError> {
+        let hash = hash_password(user.password.as_str())
+            .map_err(|err| DomainError::Internal(err.to_string()))?;
+        let user = User::new(
+            user.username.to_string(),
+            user.email.as_str().to_lowercase(),
+            hash,
+        );
         self.repo.create(user).await
     }
 

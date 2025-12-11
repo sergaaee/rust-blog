@@ -12,6 +12,7 @@ cd blog-server && cargo run
 ```
 
 ## 2) CLI
+Note that --grpc flag supported as well
 1. Login
 ```bash
 cargo run -- login --username proverka --password proverka
