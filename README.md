@@ -5,7 +5,8 @@ cargo build
 ```
 
 ## 1) Server:
-1. Fill the `````.env````` file from ```.env.example```
+1. Create db via psql (use blog-api as an example)
+2. Fill the `````.env````` file from ```.env.example```
 ```bash
 cd blog-server && cargo run
 ```
