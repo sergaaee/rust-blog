@@ -168,7 +168,9 @@ fn PostDetail(id: Uuid) -> Element {
             };
             client.token = (*token.read()).clone();
             if client.delete_post(id).await.is_ok() {
-                navigator.push(Route::Posts{});
+                navigator.push(Route::Posts {});
+            } else {
+                navigator.push(Route::Login {});
             };
         });
     };
@@ -324,8 +326,7 @@ fn EditPost(id: Uuid) -> Element {
         }
     }
 
-    // Правильный доступ: .value() возвращает Option<Option<Post>>
-    let x = match post_state.read().as_ref() {
+    let res = match post_state.read().as_ref() {
         Some(Ok(post)) => {
             // Пост загружен — инициализируем сигналы сразу с данными поста
             let mut title = use_signal(|| post.title.clone());
@@ -351,6 +352,8 @@ fn EditPost(id: Uuid) -> Element {
                         .is_ok()
                     {
                         navigator.push(Route::PostDetail { id });
+                    } else {
+                        navigator.push(Route::Login {});
                     }
                 });
             };
@@ -414,7 +417,7 @@ fn EditPost(id: Uuid) -> Element {
             }
         },
     };
-    x
+    res
 }
 
 #[component]
@@ -444,34 +447,67 @@ fn Login() -> Element {
     };
 
     rsx! {
+        div {
+            class: "min-h-screen flex items-center justify-center bg-gray-50 px-4",
+
+            // Карточка формы
             div {
-                h1 { "Login" }
-                form { onsubmit: on_submit,
-                    input {
-        class: "w-full p-3 mb-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition",
-        r#type: "text",
-        placeholder: "Username",
-        value: "{username}",
-        oninput: move |evt| username.set(evt.value()),
-    }
+                class: "w-full max-w-md bg-white rounded-2xl shadow-xl p-8 md:p-10",
 
-    input {
-        class: "w-full p-3 mb-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition",
-        r#type: "password",
-        placeholder: "Password",
-        value: "{password}",
-        oninput: move |evt| password.set(evt.value()),
-    }
+                h1 {
+                    class: "text-3xl font-bold text-center text-gray-900 mb-8",
+                    "Login to Blog"
+                }
 
-    button {
-        class: "w-full bg-blue-600 text-white py-3 rounded-xl shadow-md hover:bg-blue-700 transition",
-        r#type: "submit",
-        "Login"
-    }
+                form {
+                    onsubmit: on_submit,
+                    class: "space-y-6",
 
+                    div {
+                        input {
+                            class: "w-full px-5 py-4 text-lg border border-gray-300 rounded-xl shadow-sm
+                                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                 transition placeholder-gray-500 text-black",
+                            r#type: "text",
+                            placeholder: "Username",
+                            value: "{username}",
+                            oninput: move |evt| username.set(evt.value()),
+                        }
+                    }
+
+                    div {
+                        input {
+                            class: "w-full px-5 py-4 text-lg border border-gray-300 rounded-xl shadow-sm
+                                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                 transition placeholder-gray-500 text-black",
+                            r#type: "password",
+                            placeholder: "Password",
+                            value: "{password}",
+                            oninput: move |evt| password.set(evt.value()),
+                        }
+                    }
+
+                    button {
+                        class: "w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold
+                             rounded-xl shadow-md transition transform hover:-translate-y-0.5
+                             active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed",
+                        r#type: "submit",
+                        disabled: username.read().trim().is_empty() || password.read().len() < 3,
+                        "Login"
+                    }
+
+                    // Опционально — ссылка на регистрацию
+                    div { class: "text-center mt-6",
+                        Link {
+                            to: Route::Register {},
+                            class: "text-blue-600 hover:text-blue-800 font-medium transition",
+                            "Don't have an account? Sign up"
+                        }
+                    }
                 }
             }
         }
+    }
 }
 
 #[component]
@@ -503,42 +539,95 @@ fn Register() -> Element {
     };
 
     rsx! {
+        div {
+            class: "min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12",
+
+            // Карточка формы регистрации
             div {
-                h1 { "Register" }
-                form { onsubmit: on_submit,
-                    input {
-        class: "w-full p-3 mb-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition",
-        r#type: "text",
-        placeholder: "Username",
-        value: "{username}",
-        oninput: move |evt| username.set(evt.value()),
-    }
+                class: "w-full max-w-md bg-white rounded-2xl shadow-xl p-8 md:p-10",
 
-    input {
-        class: "w-full p-3 mb-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition",
-        r#type: "email",
-        placeholder: "Email",
-        value: "{email}",
-        oninput: move |evt| email.set(evt.value()),
-    }
+                h1 {
+                    class: "text-3xl font-bold text-center text-gray-900 mb-8",
+                    "Create Account"
+                }
 
-    input {
-        class: "w-full p-3 mb-4 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition",
-        r#type: "password",
-        placeholder: "Password",
-        value: "{password}",
-        oninput: move |evt| password.set(evt.value()),
-    }
+                form {
+                    onsubmit: on_submit,
+                    class: "space-y-6",
 
-    button {
-        class: "w-full bg-blue-600 text-white py-3 rounded-xl shadow-md hover:bg-blue-700 transition",
-        r#type: "submit",
-        "Register"
-    }
+                    // Username
+                    div {
+                        label { class: "block text-sm font-medium text-gray-700 mb-1", "Username" }
+                        input {
+                            class: "w-full px-5 py-4 text-lg border border-gray-300 rounded-xl shadow-sm
+                                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                 transition placeholder-gray-500 text-black",
+                            r#type: "text",
+                            placeholder: "Choose a username",
+                            value: "{username}",
+                            oninput: move |evt| username.set(evt.value().trim().to_string()),
+                            required: true,
+                        }
+                    }
 
+                    // Email
+                    div {
+                        label { class: "block text-sm font-medium text-gray-700 mb-1", "Email" }
+                        input {
+                            class: "w-full px-5 py-4 text-lg border border-gray-300 rounded-xl shadow-sm
+                                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                 transition placeholder-gray-500 text-black",
+                            r#type: "email",
+                            placeholder: "you@example.com",
+                            value: "{email}",
+                            oninput: move |evt| email.set(evt.value().trim().to_string()),
+                            required: true,
+                        }
+                    }
+
+                    // Password
+                    div {
+                        label { class: "block text-sm font-medium text-gray-700 mb-1", "Password" }
+                        input {
+                            class: "w-full px-5 py-4 text-lg border border-gray-300 rounded-xl shadow-sm
+                                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                 transition placeholder-gray-500 text-black",
+                            r#type: "password",
+                            placeholder: "At least 6 characters",
+                            value: "{password}",
+                            oninput: move |evt| password.set(evt.value()),
+                            minlength: 6,
+                            required: true,
+                        }
+                    }
+
+                    // Кнопка регистрации
+                    button {
+                        class: "w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg
+                             rounded-xl shadow-md transition transform hover:-translate-y-0.5
+                             active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed",
+                        r#type: "submit",
+                        disabled: {
+                            let u = username.read();
+                            let e = email.read();
+                            let p = password.read();
+                            u.trim().is_empty() || e.trim().is_empty() || p.len() < 6
+                        },
+                        "Create Account"
+                    }
+
+                    // Ссылка на логин
+                    div { class: "text-center pt-4",
+                        Link {
+                            to: Route::Login {},
+                            class: "text-blue-600 hover:text-blue-800 font-medium transition",
+                            "Already have an account? Log in"
+                        }
+                    }
                 }
             }
         }
+    }
 }
 
 #[component]

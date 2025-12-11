@@ -13,7 +13,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(email: String, username: String, password_hash: String) -> Self {
+    pub fn new(username: String, email: String, password_hash: String) -> Self {
         Self {
             id: Uuid::new_v4(),
             username,
